@@ -20,6 +20,12 @@ export default function LoginPage() {
   const [gEmail, setGEmail] = useState('');
   const [gLoading, setGLoading] = useState(false);
 
+  // Security Verification (2FA OTP)
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [otpInput, setOtpInput] = useState('');
+  const [otpError, setOtpError] = useState('');
+
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const isGoogleConfigured = !!googleClientId;
 
@@ -33,6 +39,35 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
+
+    // Email format validation check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    // Generate a random 6-digit OTP code for 2FA verification
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otp);
+    setOtpError('');
+    setOtpInput('');
+    setShowOtpModal(true);
+    setLoading(false);
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setOtpError('');
+
+    if (otpInput !== generatedOtp) {
+      setOtpError('Invalid 2FA verification code. Please try again.');
+      return;
+    }
+
+    setLoading(true);
+    setShowOtpModal(false);
 
     const res = await login(email, password);
     if (!res.success) {
@@ -312,6 +347,64 @@ export default function LoginPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* OTP Verification Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-6 relative shadow-2xl">
+            <button
+              onClick={() => setShowOtpModal(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center space-y-1">
+              <div className="bg-emerald-950/40 p-3 rounded-2xl border border-emerald-800/20 mb-3 mx-auto w-fit">
+                <Lock className="w-6 h-6 text-emerald-400" />
+              </div>
+              <h3 className="text-base font-bold text-slate-200">2FA Security Check</h3>
+              <p className="text-xs text-slate-400">To finalize your login, enter the simulated 2-Factor code sent to:</p>
+              <p className="text-xs text-emerald-400 font-semibold">{email}</p>
+            </div>
+
+            <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl text-center space-y-1">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Simulated Email Inbox</span>
+              <span className="text-sm font-semibold text-slate-300">Your 2FA validation code is:</span>
+              <span className="block text-2xl font-black text-amber-400 tracking-widest mt-1 select-all">{generatedOtp}</span>
+            </div>
+
+            {otpError && (
+              <div className="flex items-center gap-2 bg-rose-950/30 border border-rose-800/30 text-rose-400 text-xs px-3 py-2 rounded-lg">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{otpError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Enter 6-Digit Code</label>
+                <input
+                  type="text"
+                  maxLength="6"
+                  placeholder="e.g. 654321"
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-center font-bold tracking-widest text-lg focus:outline-none focus:border-emerald-500"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10"
+              >
+                Verify & Log In
+              </button>
+            </form>
           </div>
         </div>
       )}
