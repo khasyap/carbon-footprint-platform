@@ -7,7 +7,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { Leaf, Mail, Lock, AlertCircle, X, User } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login, loginWithGoogle } = useAuth();
+  const { login, verifyLogin, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -22,9 +22,9 @@ export default function LoginPage() {
 
   // Security Verification (2FA OTP)
   const [showOtpModal, setShowOtpModal] = useState(false);
-  const [generatedOtp, setGeneratedOtp] = useState('');
   const [otpInput, setOtpInput] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const isGoogleConfigured = !!googleClientId;
@@ -48,32 +48,29 @@ export default function LoginPage() {
       return;
     }
 
-    // Generate a random 6-digit OTP code for 2FA verification
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(otp);
-    setOtpError('');
-    setOtpInput('');
-    setShowOtpModal(true);
+    const res = await login(email, password);
+    if (res.success && res.otpSent) {
+      setOtpError('');
+      setOtpInput('');
+      setShowOtpModal(true);
+    } else {
+      setError(res.message || 'Login failed');
+    }
     setLoading(false);
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setOtpError('');
+    setOtpLoading(true);
 
-    if (otpInput !== generatedOtp) {
-      setOtpError('Invalid 2FA verification code. Please try again.');
-      return;
+    const res = await verifyLogin(email, otpInput);
+    if (res.success) {
+      setShowOtpModal(false);
+    } else {
+      setOtpError(res.message || 'Invalid or expired 2FA code');
     }
-
-    setLoading(true);
-    setShowOtpModal(false);
-
-    const res = await login(email, password);
-    if (!res.success) {
-      setError(res.message);
-    }
-    setLoading(false);
+    setOtpLoading(false);
   };
 
   const handleGoogleSelect = async (name, email) => {
@@ -367,14 +364,9 @@ export default function LoginPage() {
                 <Lock className="w-6 h-6 text-emerald-400" />
               </div>
               <h3 className="text-base font-bold text-slate-200">2FA Security Check</h3>
-              <p className="text-xs text-slate-400">To finalize your login, enter the simulated 2-Factor code sent to:</p>
+              <p className="text-xs text-slate-400">To finalize your login, enter the 6-digit code sent to:</p>
               <p className="text-xs text-emerald-400 font-semibold">{email}</p>
-            </div>
-
-            <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl text-center space-y-1">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Simulated Email Inbox</span>
-              <span className="text-sm font-semibold text-slate-300">Your 2FA validation code is:</span>
-              <span className="block text-2xl font-black text-amber-400 tracking-widest mt-1 select-all">{generatedOtp}</span>
+              <p className="text-[11px] text-slate-500 mt-2">Please check your email inbox (including spam folder) for the 2FA code.</p>
             </div>
 
             {otpError && (
@@ -400,9 +392,10 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10"
+                disabled={otpLoading}
+                className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10 disabled:opacity-50"
               >
-                Verify & Log In
+                {otpLoading ? 'Verifying...' : 'Verify & Log In'}
               </button>
             </form>
           </div>

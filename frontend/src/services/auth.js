@@ -19,3 +19,13 @@ export const loginWithGoogle = async (token, name, email) => {
   const response = await api.post('/auth/google', { token, name, email });
   return response.data;
 };
+
+export const verifyRegister = async (email, otp) => {
+  const response = await api.post('/auth/register/verify', { email, otp });
+  return response.data;
+};
+
+export const verifyLogin = async (email, otp) => {
+  const response = await api.post('/auth/login/verify', { email, otp });
+  return response.data;
+};

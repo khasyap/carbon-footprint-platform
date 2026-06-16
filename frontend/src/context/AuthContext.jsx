@@ -38,18 +38,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const res = await authService.login(email, password);
-      if (res.success) {
-        localStorage.setItem('token', res.data.token);
-        setUser({
-          _id: res.data._id,
-          name: res.data.name,
-          email: res.data.email,
-          role: res.data.role,
-          greenPoints: res.data.greenPoints,
-          badges: res.data.badges
-        });
-        router.push('/dashboard');
-        return { success: true };
+      if (res.success && res.otpSent) {
+        return { success: true, otpSent: true };
       }
       return { success: false, message: res.message || 'Login failed' };
     } catch (error) {
@@ -61,6 +51,19 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     try {
       const res = await authService.register(name, email, password);
+      if (res.success && res.otpSent) {
+        return { success: true, otpSent: true };
+      }
+      return { success: false, message: res.message || 'Registration failed' };
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Registration error occurred';
+      return { success: false, message: msg };
+    }
+  };
+
+  const verifyRegister = async (email, otp) => {
+    try {
+      const res = await authService.verifyRegister(email, otp);
       if (res.success) {
         localStorage.setItem('token', res.data.token);
         setUser({
@@ -74,9 +77,32 @@ export const AuthProvider = ({ children }) => {
         router.push('/dashboard');
         return { success: true };
       }
-      return { success: false, message: res.message || 'Registration failed' };
+      return { success: false, message: res.message || 'Verification failed' };
     } catch (error) {
-      const msg = error.response?.data?.message || 'Registration error occurred';
+      const msg = error.response?.data?.message || 'Verification error occurred';
+      return { success: false, message: msg };
+    }
+  };
+
+  const verifyLogin = async (email, otp) => {
+    try {
+      const res = await authService.verifyLogin(email, otp);
+      if (res.success) {
+        localStorage.setItem('token', res.data.token);
+        setUser({
+          _id: res.data._id,
+          name: res.data.name,
+          email: res.data.email,
+          role: res.data.role,
+          greenPoints: res.data.greenPoints,
+          badges: res.data.badges
+        });
+        router.push('/dashboard');
+        return { success: true };
+      }
+      return { success: false, message: res.message || '2FA Verification failed' };
+    } catch (error) {
+      const msg = error.response?.data?.message || '2FA Verification error occurred';
       return { success: false, message: msg };
     }
   };
@@ -121,11 +147,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const googleClientId = typeof window !== 'undefined' ? (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '') : '';
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '1234567890-dummy.apps.googleusercontent.com';
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
-      <AuthContext.Provider value={{ user, loading, login, register, loginWithGoogle, logout, refreshProfile }}>
+      <AuthContext.Provider value={{ user, loading, login, register, verifyRegister, verifyLogin, loginWithGoogle, logout, refreshProfile }}>
         {children}
       </AuthContext.Provider>
     </GoogleOAuthProvider>

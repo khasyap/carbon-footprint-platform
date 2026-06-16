@@ -7,7 +7,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { Leaf, User, Mail, Lock, AlertCircle, X, User as UserIcon } from 'lucide-react';
 
 export default function RegisterPage() {
-  const { register, loginWithGoogle } = useAuth();
+  const { register, verifyRegister, loginWithGoogle } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,9 +24,9 @@ export default function RegisterPage() {
 
   // Security Verification (OTP)
   const [showOtpModal, setShowOtpModal] = useState(false);
-  const [generatedOtp, setGeneratedOtp] = useState('');
   const [otpInput, setOtpInput] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const isGoogleConfigured = !!googleClientId;
@@ -56,38 +56,36 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+=\-[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setError('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
       setLoading(false);
       return;
     }
 
-    // Generate a random 6-digit OTP code for simulation
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(otp);
-    setOtpError('');
-    setOtpInput('');
-    setShowOtpModal(true);
+    const res = await register(name, email, password);
+    if (res.success && res.otpSent) {
+      setOtpError('');
+      setOtpInput('');
+      setShowOtpModal(true);
+    } else {
+      setError(res.message || 'Registration failed');
+    }
     setLoading(false);
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setOtpError('');
+    setOtpLoading(true);
 
-    if (otpInput !== generatedOtp) {
-      setOtpError('Invalid verification code. Please try again.');
-      return;
+    const res = await verifyRegister(email, otpInput);
+    if (res.success) {
+      setShowOtpModal(false);
+    } else {
+      setOtpError(res.message || 'Invalid or expired verification code');
     }
-
-    setLoading(true);
-    setShowOtpModal(false);
-
-    const res = await register(name, email, password);
-    if (!res.success) {
-      setError(res.message);
-    }
-    setLoading(false);
+    setOtpLoading(false);
   };
 
   const handleGoogleSelect = async (name, email) => {
@@ -411,14 +409,9 @@ export default function RegisterPage() {
                 <Lock className="w-6 h-6 text-emerald-400" />
               </div>
               <h3 className="text-base font-bold text-slate-200">Security Verification</h3>
-              <p className="text-xs text-slate-400">We sent a simulated 6-digit verification code to:</p>
+              <p className="text-xs text-slate-400">We sent a 6-digit verification code to:</p>
               <p className="text-xs text-emerald-400 font-semibold">{email}</p>
-            </div>
-
-            <div className="bg-slate-950 border border-slate-850 p-4 rounded-xl text-center space-y-1">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Simulated Email Inbox</span>
-              <span className="text-sm font-semibold text-slate-300">Your EcoCarbon registration code is:</span>
-              <span className="block text-2xl font-black text-amber-400 tracking-widest mt-1 select-all">{generatedOtp}</span>
+              <p className="text-[11px] text-slate-500 mt-2">Please check your email inbox (including spam folder) for the verification code.</p>
             </div>
 
             {otpError && (
@@ -444,9 +437,10 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10"
+                disabled={otpLoading}
+                className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10 disabled:opacity-50"
               >
-                Verify & Register
+                {otpLoading ? 'Verifying...' : 'Verify & Register'}
               </button>
             </form>
           </div>
