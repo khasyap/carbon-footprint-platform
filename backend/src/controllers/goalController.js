@@ -84,7 +84,7 @@ const createGoal = async (req, res) => {
 const updateGoal = async (req, res) => {
   try {
     const { targetEmission, status } = req.body;
-    let goal = await Goal.findById(goalId = req.params.id);
+    let goal = await Goal.findById(req.params.id);
 
     if (!goal) {
       return res.status(404).json({ success: false, message: 'Goal not found' });

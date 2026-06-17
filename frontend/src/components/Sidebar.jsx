@@ -30,7 +30,7 @@ export default function Sidebar() {
         <div className="px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Navigation
         </div>
-        <nav className="space-y-1 px-3">
+        <nav className="space-y-1 px-3" aria-label="Sidebar Navigation">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.path || (item.path.startsWith('/dashboard#') && pathname === '/dashboard');
@@ -44,7 +44,7 @@ export default function Sidebar() {
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} aria-hidden="true" />
                 <span>{item.name}</span>
               </Link>
             );

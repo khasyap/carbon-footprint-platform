@@ -128,10 +128,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Email Address</label>
+            <label htmlFor="email" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-500" />
+              <Mail className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-500" aria-hidden="true" />
               <input
+                id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
@@ -143,10 +144,11 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
+            <label htmlFor="password" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-500" />
+              <Lock className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-500" aria-hidden="true" />
               <input
+                id="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -265,8 +267,9 @@ export default function LoginPage() {
             ) : customGoogle ? (
               <form onSubmit={handleCustomGoogleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Google Profile Name</label>
+                  <label htmlFor="googleName" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Google Profile Name</label>
                   <input
+                    id="googleName"
                     type="text"
                     placeholder="e.g. Google Citizen"
                     value={gName}
@@ -276,8 +279,9 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Google Email Address</label>
+                  <label htmlFor="googleEmail" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Google Email Address</label>
                   <input
+                    id="googleEmail"
                     type="email"
                     placeholder="e.g. user@gmail.com"
                     value={gEmail}
@@ -355,13 +359,14 @@ export default function LoginPage() {
             <button
               onClick={() => setShowOtpModal(false)}
               className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
+              aria-label="Close verification modal"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
 
             <div className="text-center space-y-1">
               <div className="bg-emerald-950/40 p-3 rounded-2xl border border-emerald-800/20 mb-3 mx-auto w-fit">
-                <Lock className="w-6 h-6 text-emerald-400" />
+                <Lock className="w-6 h-6 text-emerald-400" aria-hidden="true" />
               </div>
               <h3 className="text-base font-bold text-slate-200">2FA Security Check</h3>
               <p className="text-xs text-slate-400">To finalize your login, enter the 6-digit code sent to:</p>
@@ -371,15 +376,16 @@ export default function LoginPage() {
 
             {otpError && (
               <div className="flex items-center gap-2 bg-rose-950/30 border border-rose-800/30 text-rose-400 text-xs px-3 py-2 rounded-lg">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
                 <span>{otpError}</span>
               </div>
             )}
 
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Enter 6-Digit Code</label>
+                <label htmlFor="otpCode" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Enter 6-Digit Code</label>
                 <input
+                  id="otpCode"
                   type="text"
                   maxLength="6"
                   placeholder="e.g. 654321"

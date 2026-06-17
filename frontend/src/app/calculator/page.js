@@ -145,13 +145,14 @@ export default function CalculatorPage() {
                 {/* Section 1: Transportation */}
                 <div className="bg-slate-900/40 border border-slate-800/80 p-6 rounded-2xl space-y-4">
                   <div className="flex items-center gap-2">
-                    <Leaf className="w-5 h-5 text-emerald-400" />
+                    <Leaf className="w-5 h-5 text-emerald-400" aria-hidden="true" />
                     <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">Transportation</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-400">Transit Mode</label>
+                      <label htmlFor="transportType" className="text-xs font-semibold text-slate-400">Transit Mode</label>
                       <select
+                        id="transportType"
                         {...register('transportType')}
                         className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                       >
@@ -162,8 +163,9 @@ export default function CalculatorPage() {
                     </div>
                     
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-400">Distance Travelled (km)</label>
+                      <label htmlFor="distance" className="text-xs font-semibold text-slate-400">Distance Travelled (km)</label>
                       <input
+                        id="distance"
                         type="number"
                         step="any"
                         placeholder="0"
@@ -177,13 +179,14 @@ export default function CalculatorPage() {
                 {/* Section 2: Home Energy & Water */}
                 <div className="bg-slate-900/40 border border-slate-800/80 p-6 rounded-2xl space-y-4">
                   <div className="flex items-center gap-2">
-                    <Leaf className="w-5 h-5 text-emerald-400" />
+                    <Leaf className="w-5 h-5 text-emerald-400" aria-hidden="true" />
                     <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">Energy & Water</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-400">Electricity Consumed (kWh)</label>
+                      <label htmlFor="electricityUnits" className="text-xs font-semibold text-slate-400">Electricity Consumed (kWh)</label>
                       <input
+                        id="electricityUnits"
                         type="number"
                         step="any"
                         placeholder="0"
@@ -193,8 +196,9 @@ export default function CalculatorPage() {
                     </div>
                     
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-400">Water Consumption (Litres)</label>
+                      <label htmlFor="waterUsage" className="text-xs font-semibold text-slate-400">Water Consumption (Litres)</label>
                       <input
+                        id="waterUsage"
                         type="number"
                         step="any"
                         placeholder="0"
@@ -208,13 +212,14 @@ export default function CalculatorPage() {
                 {/* Section 3: Diet & Waste */}
                 <div className="bg-slate-900/40 border border-slate-800/80 p-6 rounded-2xl space-y-4">
                   <div className="flex items-center gap-2">
-                    <Leaf className="w-5 h-5 text-emerald-400" />
+                    <Leaf className="w-5 h-5 text-emerald-400" aria-hidden="true" />
                     <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">Diet & Waste</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-400">Diet Habit</label>
+                      <label htmlFor="foodType" className="text-xs font-semibold text-slate-400">Diet Habit</label>
                       <select
+                        id="foodType"
                         {...register('foodType')}
                         className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-emerald-500 transition-colors text-sm"
                       >
@@ -225,8 +230,9 @@ export default function CalculatorPage() {
                     </div>
                     
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-400">Waste Generated (kg)</label>
+                      <label htmlFor="wasteGenerated" className="text-xs font-semibold text-slate-400">Waste Generated (kg)</label>
                       <input
+                        id="wasteGenerated"
                         type="number"
                         step="any"
                         placeholder="0"

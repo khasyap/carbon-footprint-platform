@@ -87,8 +87,9 @@ export default function GoalsPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Target Budget Value (kg)</label>
+                    <label htmlFor="targetEmission" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Target Budget Value (kg)</label>
                     <input
+                      id="targetEmission"
                       type="number"
                       step="any"
                       placeholder="e.g. 200"
@@ -108,7 +109,7 @@ export default function GoalsPage() {
                 </form>
 
                 <div className="p-4 bg-slate-950 border border-slate-900 rounded-xl flex items-start gap-2.5">
-                  <Sparkles className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                  <Sparkles className="w-5 h-5 text-emerald-500 flex-shrink-0" aria-hidden="true" />
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     Goal calculations measure all emissions logged starting from the goal creation timestamp.
                   </p>
