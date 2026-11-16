@@ -1,83 +1,109 @@
 import { NextResponse } from 'next/server';
+import serverless from 'serverless-http';
+import app from '../../../server/app';
+import connectDB from '../../../server/config/db';
 
-const getBackendUrl = () => {
-  let backendUrl =
-    process.env.BACKEND_URL ||
-    process.env.INTERNAL_BACKEND_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    (process.env.NODE_ENV !== 'production' ? 'http://127.0.0.1:5000' : '');
-
-  if (!backendUrl) return '';
-
-  backendUrl = backendUrl.trim().replace(/\/+$/, '');
-  if (!backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
-    backendUrl = `http://${backendUrl}`;
-  }
-  if (backendUrl.endsWith('/api')) {
-    backendUrl = backendUrl.slice(0, -4);
-  }
-  return backendUrl;
-};
+const serverlessHandler = serverless(app);
 
 async function handler(req, context) {
-  const resolvedParams = context?.params ? await context.params : {};
-  const pathSegments = resolvedParams?.path || [];
-  const subPath = Array.isArray(pathSegments) ? pathSegments.join('/') : pathSegments;
-  const backendBase = getBackendUrl();
+  // 1. If an external BACKEND_URL is explicitly provided (and not localhost), proxy to it
+  const externalBackend = process.env.BACKEND_URL;
+  if (externalBackend && externalBackend.startsWith('http') && !externalBackend.includes('127.0.0.1') && !externalBackend.includes('localhost')) {
+    const resolvedParams = context?.params ? await context.params : {};
+    const pathSegments = resolvedParams?.path || [];
+    const subPath = Array.isArray(pathSegments) ? pathSegments.join('/') : pathSegments;
+    let base = externalBackend.trim().replace(/\/+$/, '');
+    if (base.endsWith('/api')) base = base.slice(0, -4);
+    const search = req.nextUrl?.search || '';
+    const targetUrl = `${base}/api/${subPath}${search}`;
 
-  if (!backendBase) {
+    try {
+      const headers = new Headers();
+      req.headers.forEach((value, key) => {
+        const lower = key.toLowerCase();
+        if (lower !== 'host' && lower !== 'connection' && lower !== 'content-length') {
+          headers.set(key, value);
+        }
+      });
+      const init = { method: req.method, headers };
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        const body = await req.text();
+        if (body) init.body = body;
+      }
+      const response = await fetch(targetUrl, init);
+      const data = await response.text();
+      return new NextResponse(data, {
+        status: response.status,
+        headers: { 'Content-Type': response.headers.get('content-type') || 'application/json' },
+      });
+    } catch (proxyError) {
+      console.warn('[Proxy Notice] External backend unreachable, running embedded serverless:', proxyError.message);
+    }
+  }
+
+  // 2. Native Vercel Serverless execution
+  try {
+    await connectDB();
+  } catch (dbError) {
+    console.error('[DB Error]:', dbError.message);
     return NextResponse.json(
       {
         success: false,
-        message: 'Backend API URL is not configured. Please add NEXT_PUBLIC_API_URL or BACKEND_URL in your Vercel Project Settings > Environment Variables.',
+        message: 'Database connection failed. Please check your MONGO_URI environment variable in Vercel.',
       },
       { status: 503 }
     );
   }
 
-  const search = req.nextUrl?.search || '';
-  const targetUrl = `${backendBase}/api/${subPath}${search}`;
+  const url = new URL(req.url);
+  const headers = {};
+  req.headers.forEach((value, key) => {
+    headers[key.toLowerCase()] = value;
+  });
+
+  // Ensure x-forwarded-for is present for rate limiters
+  if (!headers['x-forwarded-for']) {
+    headers['x-forwarded-for'] = '127.0.0.1';
+  }
+
+  let body = '';
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    try {
+      body = await req.text();
+    } catch (e) {
+      body = '';
+    }
+  }
+
+  const event = {
+    httpMethod: req.method,
+    path: url.pathname,
+    queryStringParameters: Object.fromEntries(url.searchParams.entries()),
+    headers,
+    body: body || null,
+    isBase64Encoded: false,
+  };
 
   try {
-    const headers = new Headers();
-    req.headers.forEach((value, key) => {
-      const lower = key.toLowerCase();
-      // Skip headers that should not be forwarded to avoid upstream SSL / proxy issues
-      if (lower !== 'host' && lower !== 'connection' && lower !== 'content-length') {
-        headers.set(key, value);
-      }
-    });
-
-    const init = {
-      method: req.method,
-      headers,
-    };
-
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      const body = await req.text();
-      if (body) {
-        init.body = body;
+    const result = await serverlessHandler(event, {});
+    const responseHeaders = new Headers();
+    if (result.headers) {
+      for (const [key, value] of Object.entries(result.headers)) {
+        if (value !== undefined && key.toLowerCase() !== 'content-encoding') {
+          responseHeaders.set(key, String(value));
+        }
       }
     }
 
-    const response = await fetch(targetUrl, init);
-    const contentType = response.headers.get('content-type') || 'application/json';
-    const data = await response.text();
-
-    return new NextResponse(data, {
-      status: response.status,
-      headers: {
-        'Content-Type': contentType,
-      },
+    return new NextResponse(result.body, {
+      status: result.statusCode,
+      headers: responseHeaders,
     });
   } catch (error) {
-    console.error(`[API Proxy Error] Failed to proxy ${req.method} to ${targetUrl}:`, error.message);
+    console.error('[Serverless Error]:', error);
     return NextResponse.json(
-      {
-        success: false,
-        message: `Backend service is temporarily unreachable or starting up. Please try again shortly. (${error.message})`,
-      },
-      { status: 503 }
+      { success: false, message: error.message || 'Internal server error' },
+      { status: 500 }
     );
   }
 }

@@ -17,6 +17,7 @@ const apiLimiter = rateLimit({
   message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
 });
 
 const authLimiter = rateLimit({
@@ -25,6 +26,7 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Too many authentication attempts, please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false,
 });
 
 // Middlewares

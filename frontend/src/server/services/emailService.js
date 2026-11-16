@@ -1,0 +1,86 @@
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+/**
+ * Sends a security OTP code verification email.
+ * @param {string} toEmail 
+ * @param {string} otp 
+ * @param {string} action - 'registration' or 'login'
+ */
+const sendOtpEmail = async (toEmail, otp, action) => {
+  // If email credentials are not set, log OTP to server console and succeed gracefully (demo/fallback mode)
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn(`[OTP Notice] EMAIL_USER/EMAIL_PASS not configured. Demo Verification Code for ${toEmail}: ${otp}`);
+    return { messageId: 'demo-simulated-id' };
+  }
+
+  const act = action.toLowerCase();
+  let subject = 'EcoCarbon - 2FA Security Check';
+  let title = 'Two-Factor Authentication';
+  let actionText = 'complete your sign-in request';
+
+  if (act.includes('register')) {
+    subject = 'EcoCarbon - Verify Your Registration';
+    title = 'Confirm Your Registration';
+    actionText = 'register your new account';
+  } else if (act.includes('forgot') || act.includes('reset')) {
+    subject = 'EcoCarbon - Reset Your Password';
+    title = 'Password Reset Verification';
+    actionText = 'reset your account password';
+  }
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; color: #1a202c;">
+      <div style="text-align: center; border-bottom: 2px solid #10b981; padding-bottom: 20px; margin-bottom: 20px;">
+        <h2 style="color: #10b981; margin: 0; font-size: 24px;">🌱 EcoCarbon Tracker</h2>
+      </div>
+      
+      <div style="padding: 10px 0;">
+        <h3 style="color: #2d3748; margin-top: 0;">${title}</h3>
+        <p style="font-size: 15px; line-height: 1.6; color: #4a5568;">
+          You requested to ${actionText} on the EcoCarbon platform. Please enter the following 6-digit security code:
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <span style="font-size: 36px; font-weight: 800; letter-spacing: 5px; color: #f59e0b; background-color: #fef3c7; padding: 12px 24px; border-radius: 8px; border: 1px solid #fde68a;">
+            ${otp}
+          </span>
+        </div>
+        
+        <p style="font-size: 13px; line-height: 1.5; color: #718096; margin-top: 30px;">
+          This code is valid for 10 minutes. If you did not make this request, you can safely ignore this email.
+        </p>
+      </div>
+      
+      <div style="text-align: center; border-top: 1px solid #edf2f7; padding-top: 20px; margin-top: 30px; font-size: 12px; color: #a0aec0;">
+        <p>EcoCarbon Carbon Footprint Tracker Platform</p>
+      </div>
+    </div>
+  `;
+
+  const mailOptions = {
+    from: `"EcoCarbon Coach" <${process.env.EMAIL_USER}>`,
+    to: toEmail,
+    subject: subject,
+    html: htmlContent
+  };
+
+  try {
+    return await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error(`[Email Error] Failed to send OTP email via SMTP to ${toEmail}:`, error.message);
+    console.warn(`[OTP Fallback] Verification Code for ${toEmail}: ${otp}`);
+    return { messageId: 'fallback-id' };
+  }
+};
+
+module.exports = {
+  sendOtpEmail
+};

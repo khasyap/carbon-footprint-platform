@@ -1,14 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
-    const backendUrl =
-      process.env.BACKEND_URL ||
-      process.env.INTERNAL_BACKEND_URL ||
-      (process.env.NODE_ENV !== 'production' ? 'http://127.0.0.1:5000' : null);
+    const backendUrl = process.env.BACKEND_URL;
 
-    // If no external backend URL is specified in production (e.g. Vercel),
-    // do not rewrite to 127.0.0.1 to prevent Vercel's DNS_HOSTNAME_RESOLVED_PRIVATE error.
-    if (!backendUrl) {
+    // Only rewrite if an external backend URL is explicitly configured.
+    // Otherwise, all /api/* requests are processed natively by the Next.js serverless route handler.
+    if (!backendUrl || backendUrl.includes('127.0.0.1') || backendUrl.includes('localhost')) {
       return [];
     }
 
