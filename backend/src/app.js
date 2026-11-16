@@ -7,6 +7,9 @@ const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 const app = express();
 
+// Trust proxy for secure cookies and rate-limiting when deployed behind reverse proxies (Render, Railway, Vercel)
+app.set('trust proxy', 1);
+
 // Rate Limiters
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

@@ -29,7 +29,12 @@ export default function RegisterPage() {
   const [otpLoading, setOtpLoading] = useState(false);
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-  const isGoogleConfigured = !!googleClientId;
+  const isGoogleConfigured = Boolean(
+    googleClientId &&
+    !googleClientId.includes('dummy') &&
+    googleClientId !== 'undefined' &&
+    googleClientId !== 'null'
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();

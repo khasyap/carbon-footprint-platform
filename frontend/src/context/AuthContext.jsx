@@ -147,15 +147,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '1234567890-dummy.apps.googleusercontent.com';
-
-  return (
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <AuthContext.Provider value={{ user, loading, login, register, verifyRegister, verifyLogin, loginWithGoogle, logout, refreshProfile }}>
-        {children}
-      </AuthContext.Provider>
-    </GoogleOAuthProvider>
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const isGoogleValid = Boolean(
+    googleClientId &&
+    !googleClientId.includes('dummy') &&
+    googleClientId !== 'undefined' &&
+    googleClientId !== 'null'
   );
+
+  const authContent = (
+    <AuthContext.Provider value={{ user, loading, login, register, verifyRegister, verifyLogin, loginWithGoogle, logout, refreshProfile }}>
+      {children}
+    </AuthContext.Provider>
+  );
+
+  if (isGoogleValid) {
+    return (
+      <GoogleOAuthProvider clientId={googleClientId}>
+        {authContent}
+      </GoogleOAuthProvider>
+    );
+  }
+
+  return authContent;
 };
 
 export const useAuth = () => {
