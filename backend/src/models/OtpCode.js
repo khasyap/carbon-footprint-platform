@@ -20,7 +20,7 @@ const otpCodeSchema = new mongoose.Schema({
   action: {
     type: String,
     required: true,
-    enum: ['REGISTER', 'LOGIN']
+    enum: ['REGISTER', 'LOGIN', 'FORGOT_PASSWORD']
   },
   createdAt: {
     type: Date,

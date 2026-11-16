@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import useAuth from '../../hooks/useAuth';
 import { GoogleLogin } from '@react-oauth/google';
-import { Leaf, User, Mail, Lock, AlertCircle, X, User as UserIcon } from 'lucide-react';
+import { Leaf, User, Mail, Lock, AlertCircle, X, User as UserIcon, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
   const { register, verifyRegister, loginWithGoogle } = useAuth();
@@ -12,6 +12,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -185,13 +187,25 @@ export default function RegisterPage() {
               <Lock className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-500" aria-hidden="true" />
               <input
                 id="registerPassword"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/80 transition-colors"
+                className="w-full pl-11 pr-12 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/80 transition-colors"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300 focus:outline-none transition-colors"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" aria-hidden="true" />
+                ) : (
+                  <Eye className="w-5 h-5" aria-hidden="true" />
+                )}
+              </button>
             </div>
           </div>
 
@@ -201,13 +215,25 @@ export default function RegisterPage() {
               <Lock className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-500" aria-hidden="true" />
               <input
                 id="registerConfirmPassword"
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/80 transition-colors"
+                className="w-full pl-11 pr-12 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/80 transition-colors"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300 focus:outline-none transition-colors"
+                aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="w-5 h-5" aria-hidden="true" />
+                ) : (
+                  <Eye className="w-5 h-5" aria-hidden="true" />
+                )}
+              </button>
             </div>
           </div>
 

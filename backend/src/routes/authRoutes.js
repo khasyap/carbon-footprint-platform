@@ -1,12 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, verifyRegisterOtp, loginUser, verifyLoginOtp, getUserProfile, googleLogin } = require('../controllers/authController');
+const {
+  registerUser,
+  verifyRegisterOtp,
+  loginUser,
+  verifyLoginOtp,
+  getUserProfile,
+  googleLogin,
+  forgotPassword,
+  resetPassword
+} = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.post('/register', registerUser);
 router.post('/register/verify', verifyRegisterOtp);
 router.post('/login', loginUser);
 router.post('/login/verify', verifyLoginOtp);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.post('/google', googleLogin);
 router.get('/profile', protect, getUserProfile);
 

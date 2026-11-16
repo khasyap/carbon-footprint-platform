@@ -175,6 +175,49 @@ describe('EcoCarbon Backend API Integration Tests', () => {
     expect(res.body.data.token).toBeDefined();
   });
 
+  // Test 5b: Forgot password request
+  test('POST /api/auth/forgot-password should send OTP for existing user', async () => {
+    User.findOne.mockResolvedValue(mockUser);
+    OtpCode.deleteMany.mockResolvedValue({});
+    OtpCode.create.mockResolvedValue({});
+
+    const res = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: 'ava@example.com' });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.otpSent).toBe(true);
+  });
+
+  // Test 5c: Reset password with OTP
+  test('POST /api/auth/reset-password should verify code and update password', async () => {
+    const mockOtpRecord = {
+      email: 'ava@example.com',
+      otp: '789123',
+      action: 'FORGOT_PASSWORD',
+      _id: 'otp_id_789',
+    };
+    OtpCode.findOne.mockResolvedValue(mockOtpRecord);
+    User.findOne.mockResolvedValue({
+      ...mockUser,
+      save: jest.fn().mockResolvedValue(true)
+    });
+    OtpCode.deleteOne.mockResolvedValue({});
+
+    const res = await request(app)
+      .post('/api/auth/reset-password')
+      .send({
+        email: 'ava@example.com',
+        otp: '789123',
+        newPassword: 'NewPassword123!'
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toContain('Password reset successfully');
+  });
+
   // Test 6: GET User Profile (Protected Route)
   test('GET /api/auth/profile should fetch profile details for authenticated user', async () => {
     const res = await request(app)

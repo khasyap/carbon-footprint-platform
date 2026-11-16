@@ -21,13 +21,20 @@ const sendOtpEmail = async (toEmail, otp, action) => {
     return { messageId: 'demo-simulated-id' };
   }
 
-  const isRegister = action.toLowerCase() === 'register';
-  const subject = isRegister 
-    ? 'EcoCarbon - Verify Your Registration' 
-    : 'EcoCarbon - 2FA Security Check';
+  const act = action.toLowerCase();
+  let subject = 'EcoCarbon - 2FA Security Check';
+  let title = 'Two-Factor Authentication';
+  let actionText = 'complete your sign-in request';
 
-  const title = isRegister ? 'Confirm Your Registration' : 'Two-Factor Authentication';
-  const actionText = isRegister ? 'register your new account' : 'complete your sign-in request';
+  if (act.includes('register')) {
+    subject = 'EcoCarbon - Verify Your Registration';
+    title = 'Confirm Your Registration';
+    actionText = 'register your new account';
+  } else if (act.includes('forgot') || act.includes('reset')) {
+    subject = 'EcoCarbon - Reset Your Password';
+    title = 'Password Reset Verification';
+    actionText = 'reset your account password';
+  }
 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; color: #1a202c;">

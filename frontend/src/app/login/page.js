@@ -4,14 +4,29 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import useAuth from '../../hooks/useAuth';
 import { GoogleLogin } from '@react-oauth/google';
-import { Leaf, Mail, Lock, AlertCircle, X, User } from 'lucide-react';
+import { Leaf, Mail, Lock, AlertCircle, X, User, Eye, EyeOff, CheckCircle2, KeyRound } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login, verifyLogin, loginWithGoogle } = useAuth();
+  const { login, verifyLogin, loginWithGoogle, forgotPassword, resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loginSuccessMsg, setLoginSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Forgot Password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1 = enter email, 2 = enter otp & new password
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
+  const [showForgotConfirmPassword, setShowForgotConfirmPassword] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
 
   // Google Simulated Modal state (used if real Client ID is missing)
   const [showGoogleModal, setShowGoogleModal] = useState(false);
@@ -107,6 +122,74 @@ export default function LoginPage() {
     setLoading(false);
   };
 
+  const handleSendResetOtp = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotLoading(true);
+
+    if (!forgotEmail) {
+      setForgotError('Please enter your email address');
+      setForgotLoading(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotEmail)) {
+      setForgotError('Please enter a valid email address');
+      setForgotLoading(false);
+      return;
+    }
+
+    const res = await forgotPassword(forgotEmail);
+    if (res.success) {
+      setForgotStep(2);
+      setForgotOtp('');
+      setForgotNewPassword('');
+      setForgotConfirmPassword('');
+      setForgotError('');
+    } else {
+      setForgotError(res.message || 'Failed to send reset code');
+    }
+    setForgotLoading(false);
+  };
+
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotLoading(true);
+
+    if (!forgotOtp || !forgotNewPassword || !forgotConfirmPassword) {
+      setForgotError('Please fill in all fields');
+      setForgotLoading(false);
+      return;
+    }
+
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotError('Passwords do not match');
+      setForgotLoading(false);
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+=\-[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordRegex.test(forgotNewPassword)) {
+      setForgotError('Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+      setForgotLoading(false);
+      return;
+    }
+
+    const res = await resetPassword(forgotEmail, forgotOtp, forgotNewPassword);
+    if (res.success) {
+      setShowForgotModal(false);
+      setEmail(forgotEmail);
+      setPassword('');
+      setLoginSuccessMsg('Password reset successfully! Please sign in with your new password.');
+      setError('');
+    } else {
+      setForgotError(res.message || 'Failed to reset password');
+    }
+    setForgotLoading(false);
+  };
+
   return (
     <main className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
       <div className="w-full max-w-md bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl relative overflow-hidden">
@@ -123,6 +206,13 @@ export default function LoginPage() {
           </h1>
           <p className="text-sm text-slate-400 mt-1">Log in to track your carbon savings</p>
         </div>
+
+        {loginSuccessMsg && (
+          <div className="flex items-center gap-2 bg-emerald-950/30 border border-emerald-800/40 text-emerald-400 text-sm px-4 py-3 rounded-lg mb-6">
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+            <span>{loginSuccessMsg}</span>
+          </div>
+        )}
 
         {error && (
           <div className="flex items-center gap-2 bg-rose-950/30 border border-rose-800/30 text-rose-400 text-sm px-4 py-3 rounded-lg mb-6">
@@ -149,18 +239,45 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="password" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotEmail(email || '');
+                  setForgotStep(1);
+                  setForgotError('');
+                  setForgotSuccess('');
+                  setShowForgotModal(true);
+                }}
+                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium hover:underline transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-500" aria-hidden="true" />
               <input
                 id="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/80 transition-colors"
+                className="w-full pl-11 pr-12 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500/80 transition-colors"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300 focus:outline-none transition-colors"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" aria-hidden="true" />
+                ) : (
+                  <Eye className="w-5 h-5" aria-hidden="true" />
+                )}
+              </button>
             </div>
           </div>
 
@@ -409,6 +526,164 @@ export default function LoginPage() {
                 {otpLoading ? 'Verifying...' : 'Verify & Log In'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-5 relative shadow-2xl">
+            <button
+              onClick={() => {
+                setShowForgotModal(false);
+                setForgotStep(1);
+                setForgotError('');
+              }}
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
+              aria-label="Close forgot password modal"
+            >
+              <X className="w-5 h-5" aria-hidden="true" />
+            </button>
+
+            <div className="text-center space-y-1">
+              <div className="bg-emerald-950/40 p-3 rounded-2xl border border-emerald-800/20 mb-3 mx-auto w-fit">
+                <KeyRound className="w-6 h-6 text-emerald-400" aria-hidden="true" />
+              </div>
+              <h3 className="text-base font-bold text-slate-200">Reset Password</h3>
+              <p className="text-xs text-slate-400">
+                {forgotStep === 1
+                  ? "Enter your account's email address to receive a verification code."
+                  : `Enter the code sent to ${forgotEmail} and choose a new password.`}
+              </p>
+            </div>
+
+            {forgotError && (
+              <div className="flex items-center gap-2 bg-rose-950/30 border border-rose-800/30 text-rose-400 text-xs px-3 py-2 rounded-lg">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                <span>{forgotError}</span>
+              </div>
+            )}
+
+            {forgotStep === 1 ? (
+              <form onSubmit={handleSendResetOtp} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="forgotEmailInput" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" aria-hidden="true" />
+                    <input
+                      id="forgotEmailInput"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-emerald-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10 disabled:opacity-50"
+                >
+                  {forgotLoading ? 'Sending Code...' : 'Send Verification Code'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleResetPasswordSubmit} className="space-y-3.5">
+                <div className="space-y-1">
+                  <label htmlFor="forgotOtpInput" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                    6-Digit Verification Code
+                  </label>
+                  <input
+                    id="forgotOtpInput"
+                    type="text"
+                    maxLength="6"
+                    placeholder="e.g. 123456"
+                    value={forgotOtp}
+                    onChange={(e) => setForgotOtp(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-center font-bold tracking-widest text-base focus:outline-none focus:border-emerald-500"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="forgotNewPasswordInput" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" aria-hidden="true" />
+                    <input
+                      id="forgotNewPasswordInput"
+                      type={showForgotNewPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={forgotNewPassword}
+                      onChange={(e) => setForgotNewPassword(e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-emerald-500"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotNewPassword(!showForgotNewPassword)}
+                      className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 focus:outline-none"
+                      aria-label={showForgotNewPassword ? 'Hide new password' : 'Show new password'}
+                    >
+                      {showForgotNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="forgotConfirmPasswordInput" className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" aria-hidden="true" />
+                    <input
+                      id="forgotConfirmPasswordInput"
+                      type={showForgotConfirmPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={forgotConfirmPassword}
+                      onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:outline-none focus:border-emerald-500"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotConfirmPassword(!showForgotConfirmPassword)}
+                      className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 focus:outline-none"
+                      aria-label={showForgotConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                    >
+                      {showForgotConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotStep(1);
+                      setForgotError('');
+                    }}
+                    className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/10 disabled:opacity-50"
+                  >
+                    {forgotLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

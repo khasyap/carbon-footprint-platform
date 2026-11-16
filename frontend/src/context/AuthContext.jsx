@@ -130,6 +130,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      const res = await authService.forgotPassword(email);
+      return res;
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Failed to send reset code';
+      return { success: false, message: msg };
+    }
+  };
+
+  const resetPassword = async (email, otp, newPassword) => {
+    try {
+      const res = await authService.resetPassword(email, otp, newPassword);
+      return res;
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Failed to reset password';
+      return { success: false, message: msg };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -156,7 +176,7 @@ export const AuthProvider = ({ children }) => {
   );
 
   const authContent = (
-    <AuthContext.Provider value={{ user, loading, login, register, verifyRegister, verifyLogin, loginWithGoogle, logout, refreshProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, register, verifyRegister, verifyLogin, loginWithGoogle, forgotPassword, resetPassword, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

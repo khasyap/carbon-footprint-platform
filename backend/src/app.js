@@ -37,6 +37,8 @@ app.use(sanitizeInput);
 app.use('/api', apiLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
 
 // Base route
 app.get('/', (req, res) => {

@@ -267,11 +267,90 @@ const googleLogin = async (req, res) => {
   }
 };
 
+// @desc    Request password reset OTP
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide your email address' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No account found with this email address' });
+    }
+
+    const otp = generateOtpCode();
+    await sendOtpEmail(email, otp, 'forgot-password');
+
+    await OtpCode.deleteMany({ email, action: 'FORGOT_PASSWORD' });
+    await OtpCode.create({
+      email,
+      otp,
+      action: 'FORGOT_PASSWORD'
+    });
+
+    res.status(200).json({
+      success: true,
+      otpSent: true,
+      message: 'Password reset code sent to your email'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Verify OTP and reset password
+// @route   POST /api/auth/reset-password
+// @access  Public
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Please provide email, verification code, and new password' });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+=\-[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+      });
+    }
+
+    const record = await OtpCode.findOne({ email, otp, action: 'FORGOT_PASSWORD' });
+    if (!record) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired verification code' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    await OtpCode.deleteOne({ _id: record._id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully! You can now sign in with your new password.'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   verifyRegisterOtp,
   loginUser,
   verifyLoginOtp,
   getUserProfile,
-  googleLogin
+  googleLogin,
+  forgotPassword,
+  resetPassword
 };
