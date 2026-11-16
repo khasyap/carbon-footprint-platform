@@ -1,0 +1,13 @@
+{
+  "name": "carbon-footprint-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EcoCarbon Unified Fullstack Platform",
+  "scripts": {
+    "build": "npm --prefix backend install && npm --prefix frontend install && npm --prefix frontend run build",
+    "start": "node start.js"
+  },
+  "engines": {
+    "node": ">=18.18.0 <=22.x"
+  }
+}

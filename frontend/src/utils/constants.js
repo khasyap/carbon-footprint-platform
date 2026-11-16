@@ -1,6 +1,20 @@
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+let rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+// In production, ignore any localhost / 127.0.0.1 URLs because client browsers cannot reach server localhost
+if (
+  process.env.NODE_ENV === 'production' &&
+  rawApiUrl &&
+  (rawApiUrl.includes('localhost') || rawApiUrl.includes('127.0.0.1'))
+) {
+  rawApiUrl = '/api';
+}
+
+if (!rawApiUrl) {
+  rawApiUrl = '/api';
+}
+
 let cleanUrl = rawApiUrl.trim().replace(/\/+$/, '');
-if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+if (!cleanUrl.startsWith('/') && !cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
   cleanUrl = `https://${cleanUrl}`;
 }
 export const API_URL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;

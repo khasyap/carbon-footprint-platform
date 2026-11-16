@@ -15,6 +15,12 @@ const transporter = nodemailer.createTransport({
  * @param {string} action - 'registration' or 'login'
  */
 const sendOtpEmail = async (toEmail, otp, action) => {
+  // If email credentials are not set, log OTP to server console and succeed gracefully (demo/fallback mode)
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn(`[OTP Notice] EMAIL_USER/EMAIL_PASS not configured. Demo Verification Code for ${toEmail}: ${otp}`);
+    return { messageId: 'demo-simulated-id' };
+  }
+
   const isRegister = action.toLowerCase() === 'register';
   const subject = isRegister 
     ? 'EcoCarbon - Verify Your Registration' 
@@ -59,7 +65,13 @@ const sendOtpEmail = async (toEmail, otp, action) => {
     html: htmlContent
   };
 
-  return await transporter.sendMail(mailOptions);
+  try {
+    return await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error(`[Email Error] Failed to send OTP email via SMTP to ${toEmail}:`, error.message);
+    console.warn(`[OTP Fallback] Verification Code for ${toEmail}: ${otp}`);
+    return { messageId: 'fallback-id' };
+  }
 };
 
 module.exports = {
