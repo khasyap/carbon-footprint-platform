@@ -41,6 +41,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: BACKEND_URL
+        value: https://ecocarbon-backend.onrender.com
+      - key: NEXT_PUBLIC_API_URL
+        value: https://ecocarbon-backend.onrender.com/api
       - key: INTERNAL_BACKEND_URL
         fromService:
           type: web

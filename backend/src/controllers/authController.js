@@ -279,7 +279,7 @@ const forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'No account found with this email address' });
+      return res.status(400).json({ success: false, message: 'No account found with this email address' });
     }
 
     const otp = generateOtpCode();
