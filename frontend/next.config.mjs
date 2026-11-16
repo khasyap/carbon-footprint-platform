@@ -1,23 +1,29 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
-    let backendUrl =
+    const backendUrl =
       process.env.BACKEND_URL ||
       process.env.INTERNAL_BACKEND_URL ||
-      'http://127.0.0.1:5000';
+      (process.env.NODE_ENV !== 'production' ? 'http://127.0.0.1:5000' : null);
 
-    backendUrl = backendUrl.trim().replace(/\/+$/, '');
-    if (!backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
-      backendUrl = `http://${backendUrl}`;
+    // If no external backend URL is specified in production (e.g. Vercel),
+    // do not rewrite to 127.0.0.1 to prevent Vercel's DNS_HOSTNAME_RESOLVED_PRIVATE error.
+    if (!backendUrl) {
+      return [];
     }
-    if (backendUrl.endsWith('/api')) {
-      backendUrl = backendUrl.slice(0, -4);
+
+    let cleanBackendUrl = backendUrl.trim().replace(/\/+$/, '');
+    if (!cleanBackendUrl.startsWith('http://') && !cleanBackendUrl.startsWith('https://')) {
+      cleanBackendUrl = `https://${cleanBackendUrl}`;
+    }
+    if (cleanBackendUrl.endsWith('/api')) {
+      cleanBackendUrl = cleanBackendUrl.slice(0, -4);
     }
 
     return [
       {
         source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
+        destination: `${cleanBackendUrl}/api/:path*`,
       },
     ];
   },

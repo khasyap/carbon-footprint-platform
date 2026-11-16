@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server';
 
 const getBackendUrl = () => {
   let backendUrl =
-    process.env.INTERNAL_BACKEND_URL ||
     process.env.BACKEND_URL ||
+    process.env.INTERNAL_BACKEND_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    'http://127.0.0.1:5000';
+    (process.env.NODE_ENV !== 'production' ? 'http://127.0.0.1:5000' : '');
+
+  if (!backendUrl) return '';
 
   backendUrl = backendUrl.trim().replace(/\/+$/, '');
   if (!backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
@@ -22,6 +24,17 @@ async function handler(req, context) {
   const pathSegments = resolvedParams?.path || [];
   const subPath = Array.isArray(pathSegments) ? pathSegments.join('/') : pathSegments;
   const backendBase = getBackendUrl();
+
+  if (!backendBase) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Backend API URL is not configured. Please add NEXT_PUBLIC_API_URL or BACKEND_URL in your Vercel Project Settings > Environment Variables.',
+      },
+      { status: 503 }
+    );
+  }
+
   const search = req.nextUrl?.search || '';
   const targetUrl = `${backendBase}/api/${subPath}${search}`;
 
