@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 
+// Disable buffering commands so queries fail immediately if DB is not connected
+mongoose.set('bufferCommands', false);
+
 let cached = global._mongooseConn;
 if (!cached) {
   cached = global._mongooseConn = { conn: null, promise: null };
@@ -17,9 +20,16 @@ const connectDB = async () => {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(uri).then((mongooseInstance) => {
+    const opts = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
+    };
+    cached.promise = mongoose.connect(uri, opts).then((mongooseInstance) => {
       console.log(`[MongoDB] Connected: ${mongooseInstance.connection.host}`);
       return mongooseInstance;
+    }).catch((err) => {
+      cached.promise = null;
+      throw err;
     });
   }
 
@@ -27,6 +37,7 @@ const connectDB = async () => {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
+    cached.conn = null;
     console.error('[MongoDB Error]:', e.message);
     throw e;
   }

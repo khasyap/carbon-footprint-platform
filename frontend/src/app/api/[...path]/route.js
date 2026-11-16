@@ -49,7 +49,7 @@ async function handler(req, context) {
     return NextResponse.json(
       {
         success: false,
-        message: 'Database connection failed. Please check your MONGO_URI environment variable in Vercel.',
+        message: dbError.message || 'Database connection failed. Please check your MONGO_URI environment variable in Vercel.',
       },
       { status: 503 }
     );
